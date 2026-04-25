@@ -33,9 +33,9 @@ export const metadata: Metadata = {
     "SexxyMarket",
   ],
   icons: {
-    icon: "/sexxymarketlogo.PNG",
-    shortcut: "/sexxymarketlogo.PNG",
-    apple: "/sexxymarketlogo.PNG",
+    icon: "/sexxymarketlogo.png",
+    shortcut: "/sexxymarketlogo.png",
+    apple: "/sexxymarketlogo.png",
   },
   openGraph: {
     title: "SexxyMarket | Premium Adult Wellness Store in Nigeria",
@@ -44,14 +44,14 @@ export const metadata: Metadata = {
     url: "/",
     siteName: "SexxyMarket",
     type: "website",
-    images: [{ url: "/sexxymarketlogo.PNG", width: 512, height: 512, alt: "SexxyMarket logo" }],
+    images: [{ url: "/sexxymarketlogo.png", width: 512, height: 512, alt: "SexxyMarket logo" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "SexxyMarket | Premium Adult Wellness Store in Nigeria",
     description:
       "Curated adult wellness products, discreet delivery, and secure checkout in Nigeria.",
-    images: ["/sexxymarketlogo.PNG"],
+    images: ["/sexxymarketlogo.png"],
   },
 };
 

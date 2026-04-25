@@ -119,7 +119,7 @@ function GlobalLoadingOverlay() {
           }}
         >
           <img
-            src="/sexxymarketlogo.PNG"
+            src="/sexxymarketlogo.png"
             alt=""
             width={56}
             height={56}
@@ -129,7 +129,7 @@ function GlobalLoadingOverlay() {
             }}
             onError={(event) => {
               const el = event.currentTarget;
-              if (el.src.endsWith("/sexxymarketlogo.PNG")) {
+              if (/\/sexxymarketlogo\.(png|PNG)$/.test(el.src)) {
                 el.src = "/sexxymarketlogo.png";
                 return;
               }
@@ -221,14 +221,14 @@ export function RouteTransitionLoader() {
           }}
         >
           <img
-            src="/sexxymarketlogo.PNG"
+            src="/sexxymarketlogo.png"
             alt="Sexxy Market"
             width={50}
             height={50}
             style={{ objectFit: "contain" }}
             onError={(e) => {
               const el = e.currentTarget;
-              if (el.src.endsWith("/sexxymarketlogo.PNG")) {
+              if (/\/sexxymarketlogo\.(png|PNG)$/.test(el.src)) {
                 el.src = "/sexxymarketlogo.png";
                 return;
               }

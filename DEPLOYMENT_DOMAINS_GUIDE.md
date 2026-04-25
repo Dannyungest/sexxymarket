@@ -7,7 +7,7 @@ This guide explains exactly how to deploy all services and connect every domain/
 - `sexxymarket.com` -> Storefront (Vercel project: `apps/storefront`)
 - `merchant.sexxymarket.com` -> Merchant Portal (Vercel project: `apps/merchant-portal`)
 - `admin.sexxymarket.com` -> Admin Portal (Vercel project: `apps/admin-portal`)
-- `api.sexxymarket.com` -> API (Railway service: `apps/api`)
+- `api.sexxymarket.com` -> API (Render Web Service: `apps/api`)
 
 ## 2) Prerequisites
 
@@ -15,7 +15,7 @@ This guide explains exactly how to deploy all services and connect every domain/
 - Domain purchased and DNS accessible (registrar DNS or Cloudflare DNS)
 - Accounts created:
   - Vercel
-  - Railway
+  - Render
   - Neon (Postgres)
   - Upstash (Redis)
   - Flutterwave
@@ -69,36 +69,83 @@ git push
 5. Deploy
 6. Settings -> Domains -> add `admin.sexxymarket.com`
 
-## 7) Deploy API on Railway
+## 7) Deploy API on Render (Detailed)
 
-1. Open [https://railway.app](https://railway.app)
-2. Click **New Project** -> **Deploy from GitHub repo**
-3. Select repository
-4. Set service root to `apps/api`
-5. Configure build/start:
-   - Build command: `npm install && npm run build`
-   - Start command: `npm run start:prod`
-6. Add all required env vars in Railway service settings:
-   - `DATABASE_URL`
-   - `REDIS_URL`
-   - `JWT_ACCESS_SECRET`
-   - `JWT_REFRESH_SECRET`
-   - `SESSION_SECRET`
-   - `FLUTTERWAVE_SECRET_KEY`
-   - `FLUTTERWAVE_PUBLIC_KEY`
-   - `FLUTTERWAVE_ENCRYPTION_KEY`
-   - `FLUTTERWAVE_WEBHOOK_SECRET_HASH`
-   - `FLUTTERWAVE_REDIRECT_URL=https://sexxymarket.com/order/complete`
-   - `FLUTTERWAVE_API_BASE_URL=https://api.flutterwave.com`
-   - `RESEND_API_KEY`
-   - `RESEND_FROM_EMAIL`
-   - `STOREFRONT_URL=https://sexxymarket.com`
-   - `NEXT_PUBLIC_STOREFRONT_URL=https://sexxymarket.com`
-   - `MERCHANT_PORTAL_URL=https://merchant.sexxymarket.com`
-   - `ADMIN_PORTAL_URL=https://admin.sexxymarket.com`
-   - `R2_PUBLIC_BASE_URL` (if used)
-7. Deploy
-8. Add custom domain in Railway: `api.sexxymarket.com`
+### A. Create the Render service
+
+1. Open [https://dashboard.render.com](https://dashboard.render.com)
+2. Click **New +** -> **Web Service**
+3. Connect your GitHub account and select your repository
+4. Configure service:
+   - **Name:** `sexxymarket-api` (or your preferred name)
+   - **Region:** choose closest to your customers (for example Frankfurt/London)
+   - **Branch:** `main`
+   - **Root Directory:** `apps/api`
+   - **Runtime:** Node
+   - **Build Command:** `npm install && npm run build`
+   - **Start Command:** `npm run start:prod`
+5. Pick plan:
+   - For serious production: use an always-on paid plan (recommended)
+   - Free plan sleeps after inactivity and causes cold starts
+
+### B. Add environment variables in Render
+
+Open the service -> **Environment** and add:
+
+- `DATABASE_URL`
+- `REDIS_URL`
+- `JWT_ACCESS_SECRET`
+- `JWT_REFRESH_SECRET`
+- `SESSION_SECRET`
+- `FLUTTERWAVE_SECRET_KEY`
+- `FLUTTERWAVE_PUBLIC_KEY`
+- `FLUTTERWAVE_ENCRYPTION_KEY`
+- `FLUTTERWAVE_WEBHOOK_SECRET_HASH`
+- `FLUTTERWAVE_REDIRECT_URL=https://sexxymarket.com/order/complete`
+- `FLUTTERWAVE_API_BASE_URL=https://api.flutterwave.com`
+- `RESEND_API_KEY`
+- `RESEND_FROM_EMAIL`
+- `STOREFRONT_URL=https://sexxymarket.com`
+- `NEXT_PUBLIC_STOREFRONT_URL=https://sexxymarket.com`
+- `MERCHANT_PORTAL_URL=https://merchant.sexxymarket.com`
+- `ADMIN_PORTAL_URL=https://admin.sexxymarket.com`
+- `R2_PUBLIC_BASE_URL` (if used)
+- `SEED_ADMIN_EMAIL`
+- `SEED_ADMIN_PASSWORD`
+
+After saving variables, click **Manual Deploy** -> **Deploy latest commit**.
+
+### C. Confirm service is healthy
+
+1. Open the generated Render URL (something like `https://sexxymarket-api.onrender.com`)
+2. Check root health response:
+   - Should return JSON with service status
+3. In Render -> **Logs**, confirm successful startup (no crash loop)
+
+### D. Add production custom domain
+
+1. Render service -> **Settings** -> **Custom Domains**
+2. Click **Add Custom Domain**
+3. Enter: `api.sexxymarket.com`
+4. Render will show a target CNAME (example: `xxxxx.onrender.com`)
+5. Add that CNAME in your DNS provider for host `api`
+6. Wait for Render TLS certificate to become active
+
+### E. (Optional but recommended) Seed admin user once
+
+From Render **Shell** (or one-off job equivalent), run from `apps/api` context:
+
+```bash
+npm run prisma:seed
+```
+
+Use this once after confirming `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` are set correctly.
+
+### F. Production notes for Render
+
+- Keep one always-on instance for stable login/checkout UX
+- Monitor logs during first real payments and webhook callbacks
+- If you stay on sleeping/free plans, cold starts are expected
 
 ## 8) DNS Setup (Important)
 
@@ -110,7 +157,7 @@ Typical pattern:
 - `www` -> CNAME to Vercel target
 - `merchant` -> CNAME to Vercel target
 - `admin` -> CNAME to Vercel target
-- `api` -> CNAME to Railway target
+- `api` -> CNAME to Render target
 
 If DNS already has conflicting records for the same host (for example old `A` + new `CNAME` for `merchant`), remove conflicts.
 
@@ -132,7 +179,7 @@ In Flutterwave dashboard:
   - `https://merchant.sexxymarket.com`
   - `https://admin.sexxymarket.com`
   - `https://api.sexxymarket.com/api` (or health endpoint)
-- Confirm favicon/tab icon shows `sexxymarketlogo.PNG`
+- Confirm favicon/tab icon shows `sexxymarketlogo.png`
 - Share storefront URL in WhatsApp/Telegram and verify preview metadata
 - Run one real payment:
   - Checkout -> Flutterwave -> redirect to `/order/complete`

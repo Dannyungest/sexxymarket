@@ -34,10 +34,10 @@ export class NotificationsService {
       process.env.NEXT_PUBLIC_STOREFRONT_URL ??
       'https://sexxymarket.com'
     ).replace(/\/$/, '');
-    return `${base}/sexxymarketlogo.PNG`;
+    return `${base}/sexxymarketlogo.png`;
   }
 
-  /** Single brand logo row (no monogram) — uses sexymarketlogo.PNG via `emailBrandLogoUrl()`. */
+  /** Single brand logo row (no monogram) — uses sexxymarketlogo.png via `emailBrandLogoUrl()`. */
   private emailBrandHeaderRow(): string {
     const logoUrl = this.emailBrandLogoUrl();
     const img = `<img src="${logoUrl}" alt="${this.brandName}" width="${this.emailLogoWidth}" style="display:block;width:100%;max-width:${this.emailLogoMaxWidth}px;height:auto;border-radius:4px;object-fit:contain;" />`;

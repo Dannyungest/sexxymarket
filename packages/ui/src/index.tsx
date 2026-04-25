@@ -23,7 +23,7 @@ export function BrandMark({ size = 46 }: { size?: number }) {
       }}
     >
       <img
-        src="/sexxymarketlogo.PNG"
+        src="/sexxymarketlogo.png"
         alt="Sexxy Market logo"
         style={{
           width: "86%",
@@ -33,7 +33,7 @@ export function BrandMark({ size = 46 }: { size?: number }) {
         }}
         onError={(event) => {
           const target = event.currentTarget;
-          if (target.src.endsWith("/sexxymarketlogo.PNG")) {
+          if (/\/sexxymarketlogo\.(png|PNG)$/.test(target.src)) {
             target.src = "/sexxymarketlogo.png";
             return;
           }

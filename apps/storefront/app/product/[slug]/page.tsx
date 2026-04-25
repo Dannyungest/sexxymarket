@@ -147,7 +147,7 @@ export default function ProductDetailPage() {
   const availableStock = selectedVariant?.stock ?? product?.stock ?? 0;
   const hasConfigurableVariants = (product?.variants?.length ?? 0) > 0;
   const gallery = useMemo(() => {
-    const base = product?.images?.length ? product.images : [{ imageUrl: "/sexxymarketlogo.PNG", altText: product?.name }];
+    const base = product?.images?.length ? product.images : [{ imageUrl: "/sexxymarketlogo.png", altText: product?.name }];
     const optionValueImages =
       options.flatMap((option) =>
         option.values
@@ -269,10 +269,12 @@ export default function ProductDetailPage() {
           <div className="product-detail-grid">
             <div className="panel-stack" style={{ gap: 10 }}>
               <img
-                src={toDerivative(gallery[activeImage]?.imageUrl ?? "/sexxymarketlogo.PNG", "hero")}
+                src={toDerivative(gallery[activeImage]?.imageUrl ?? "/sexxymarketlogo.png", "hero")}
                 onError={(event) => {
                   const target = event.currentTarget;
-                  if (target.src.endsWith("/sexxymarketlogo.PNG")) target.src = "/sexxymarketlogo.png";
+                  if (/\/sexxymarketlogo\.(png|PNG)$/.test(target.src)) {
+                    target.src = "/sexxymarketlogo.png";
+                  }
                 }}
                 alt={product.name}
                 style={{ width: "100%", borderRadius: 14, minHeight: 320, objectFit: "cover" }}

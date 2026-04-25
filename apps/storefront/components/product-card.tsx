@@ -10,7 +10,7 @@ import { useStorefront } from "./storefront-provider";
 import { resolveProductCode } from "../lib/product-code";
 
 function resolveCardImage(url?: string) {
-  if (!url) return "/sexxymarketlogo.PNG";
+  if (!url) return "/sexxymarketlogo.png";
   if (!url.endsWith(".webp")) return url;
   return url.replace(/\.webp$/i, "-card.webp");
 }
@@ -30,7 +30,7 @@ export function ProductCard({ product }: { product: Product }) {
             alt={product.name}
             onError={(event) => {
               const target = event.currentTarget;
-              if (target.src.endsWith("/sexxymarketlogo.PNG")) {
+              if (/\/sexxymarketlogo\.(png|PNG)$/.test(target.src)) {
                 target.src = "/sexxymarketlogo.png";
               }
             }}

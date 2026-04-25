@@ -266,7 +266,7 @@ export function OrderCompleteContent() {
             <article key={i} className="surface-card" style={{ marginBottom: 8 }}>
               <div className="line-item">
                 <Image
-                  src={item.imageUrl || "/sexxymarketlogo.PNG"}
+                  src={item.imageUrl || "/sexxymarketlogo.png"}
                   alt={item.name}
                   width={72}
                   height={72}

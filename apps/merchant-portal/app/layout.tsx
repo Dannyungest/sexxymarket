@@ -13,9 +13,9 @@ export const metadata: Metadata = {
     "Merchant workspace for onboarding, catalog management, order visibility, and growth on SexxyMarket.",
   applicationName: "SexxyMarket Merchant",
   icons: {
-    icon: "/sexxymarketlogo.PNG",
-    shortcut: "/sexxymarketlogo.PNG",
-    apple: "/sexxymarketlogo.PNG",
+    icon: "/sexxymarketlogo.png",
+    shortcut: "/sexxymarketlogo.png",
+    apple: "/sexxymarketlogo.png",
   },
   openGraph: {
     title: "SexxyMarket Merchant Portal",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     url: "/",
     siteName: "SexxyMarket Merchant Portal",
     type: "website",
-    images: [{ url: "/sexxymarketlogo.PNG", width: 512, height: 512, alt: "SexxyMarket logo" }],
+    images: [{ url: "/sexxymarketlogo.png", width: 512, height: 512, alt: "SexxyMarket logo" }],
   },
 };
 

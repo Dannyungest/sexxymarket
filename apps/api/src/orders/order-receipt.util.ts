@@ -5,7 +5,7 @@ const storeRoot = (
   process.env.NEXT_PUBLIC_STOREFRONT_URL ||
   'http://localhost:3000'
 ).replace(/\/$/, '');
-const DEFAULT_ASSET = `${storeRoot}/sexxymarketlogo.PNG`;
+const DEFAULT_ASSET = `${storeRoot}/sexxymarketlogo.png`;
 
 export function absoluteMediaUrl(
   pathOrUrl: string | null | undefined,

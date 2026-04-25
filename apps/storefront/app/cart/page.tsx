@@ -54,7 +54,7 @@ export default function CartPage() {
             <article key={line.key} className="surface-card">
               <div className="line-item">
                 <Image
-                  src={line.product.images?.[0]?.imageUrl ?? "/sexxymarketlogo.PNG"}
+                  src={line.product.images?.[0]?.imageUrl ?? "/sexxymarketlogo.png"}
                   alt={line.product.name}
                   width={72}
                   height={72}

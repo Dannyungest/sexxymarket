@@ -26,9 +26,9 @@ export const metadata: Metadata = {
     "Secure admin workspace for SexxyMarket operations: orders, merchants, products, users, and compliance controls.",
   applicationName: "SexxyMarket Admin",
   icons: {
-    icon: "/sexxymarketlogo.PNG",
-    shortcut: "/sexxymarketlogo.PNG",
-    apple: "/sexxymarketlogo.PNG",
+    icon: "/sexxymarketlogo.png",
+    shortcut: "/sexxymarketlogo.png",
+    apple: "/sexxymarketlogo.png",
   },
   openGraph: {
     title: "SexxyMarket Admin Portal",
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     url: "/",
     siteName: "SexxyMarket Admin",
     type: "website",
-    images: [{ url: "/sexxymarketlogo.PNG", width: 512, height: 512, alt: "SexxyMarket logo" }],
+    images: [{ url: "/sexxymarketlogo.png", width: 512, height: 512, alt: "SexxyMarket logo" }],
   },
 };
 
