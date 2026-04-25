@@ -25,13 +25,13 @@ export default function HomePage() {
       .then((result) => {
         setProducts(result);
         if (result.length === 0) {
-          setApiWarning("Products are temporarily unavailable. Please try again shortly.");
+          setApiWarning("Products are loading please refresh.");
         } else {
           setApiWarning(null);
         }
       })
       .catch(() => {
-        setApiWarning("We could not connect to the catalog service. Please refresh shortly.");
+        setApiWarning("Products are loading please refresh.");
       });
     getCategories().then((result) => {
       setCategories(normalizeCategories(result));

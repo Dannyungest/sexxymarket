@@ -40,7 +40,7 @@ export class NotificationsService {
   /** Single brand logo row (no monogram) — uses sexxymarketlogo.png via `emailBrandLogoUrl()`. */
   private emailBrandHeaderRow(): string {
     const logoUrl = this.emailBrandLogoUrl();
-    const img = `<img src="${logoUrl}" alt="${this.brandName}" width="${this.emailLogoWidth}" style="display:block;width:100%;max-width:${this.emailLogoMaxWidth}px;height:auto;border-radius:4px;object-fit:contain;" />`;
+    const img = `<img src="${logoUrl}" alt="${this.brandName}" width="${this.emailLogoWidth}" style="display:block;width:100%;max-width:${this.emailLogoMaxWidth}px;height:auto;border-radius:4px;object-fit:contain;" onerror="this.style.display='none';" />`;
     return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td style="vertical-align:middle;padding:0 0 4px 0;">${img}</td></tr><tr><td style="vertical-align:middle;padding-top:4px;"><strong style="font-size:15px;letter-spacing:0.02em;">${this.brandName}</strong></td></tr></table>`;
   }
 
