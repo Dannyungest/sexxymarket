@@ -984,7 +984,9 @@ export class MerchantService {
     } else if (!isAdmin) {
       throw new ForbiddenException('You cannot access this document.');
     }
-    const r = await fetch(doc.fileUrl);
+    const resolvedFileUrl =
+      this.storageService.toAbsoluteMediaUrl(doc.fileUrl) ?? doc.fileUrl;
+    const r = await fetch(resolvedFileUrl);
     if (!r.ok) {
       throw new BadRequestException('Unable to load file from storage.');
     }

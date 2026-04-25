@@ -581,26 +581,45 @@ ${this.escapeEmailHtml(addressLine)}
     from?: string;
   }): Promise<boolean> {
     const apiKey = process.env.RESEND_API_KEY;
-    const from =
-      input.from ?? process.env.RESEND_FROM_EMAIL ?? 'support@sexxymarket.com';
+    const requestedFrom = input.from?.trim() ?? '';
+    const primaryFrom =
+      requestedFrom ||
+      process.env.RESEND_FROM_EMAIL?.trim() ||
+      process.env.ADMIN_AUTH_FROM_EMAIL?.trim() ||
+      'support@sexxymarket.com';
+    const fallbackFrom = process.env.RESEND_FROM_EMAIL?.trim() || '';
     if (!apiKey) {
       this.logger.warn(`RESEND_API_KEY missing. Skipping email to ${input.to}`);
       return false;
     }
 
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from,
-        to: [input.to],
-        subject: input.subject,
-        html: input.html,
-      }),
-    });
+    const sendWithFrom = async (from: string) =>
+      fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from,
+          to: [input.to],
+          subject: input.subject,
+          html: input.html,
+        }),
+      });
+
+    let response = await sendWithFrom(primaryFrom);
+    if (
+      !response.ok &&
+      fallbackFrom &&
+      fallbackFrom.toLowerCase() !== primaryFrom.toLowerCase()
+    ) {
+      const initialBody = await response.text();
+      this.logger.warn(
+        `Email send failed with from=${primaryFrom}. Retrying with RESEND_FROM_EMAIL. Error: ${initialBody}`,
+      );
+      response = await sendWithFrom(fallbackFrom);
+    }
 
     if (!response.ok) {
       const body = await response.text();

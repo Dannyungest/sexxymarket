@@ -9,10 +9,32 @@ import type { Product } from "../lib/storefront-types";
 import { useStorefront } from "./storefront-provider";
 import { resolveProductCode } from "../lib/product-code";
 
+const apiBase = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/$/, "");
+
+function normalizeMediaUrl(url: string) {
+  if (!url) return url;
+  if (/^https?:\/\//i.test(url)) {
+    try {
+      const parsed = new URL(url);
+      const host = parsed.hostname.toLowerCase();
+      const isLocalhostHost = host === "localhost" || host === "127.0.0.1" || host === "::1";
+      if (isLocalhostHost && parsed.pathname.startsWith("/uploads/") && apiBase) {
+        return `${apiBase}${parsed.pathname}${parsed.search}${parsed.hash}`;
+      }
+    } catch {
+      return url;
+    }
+    return url;
+  }
+  if (!apiBase) return url.startsWith("/") ? url : `/${url}`;
+  return `${apiBase}${url.startsWith("/") ? url : `/${url}`}`;
+}
+
 function resolveCardImage(url?: string) {
   if (!url) return "/sexxymarketlogo.png";
-  if (!url.endsWith(".webp")) return url;
-  return url.replace(/\.webp$/i, "-card.webp");
+  const normalized = normalizeMediaUrl(url);
+  if (!normalized.endsWith(".webp")) return normalized;
+  return normalized.replace(/\.webp$/i, "-card.webp");
 }
 
 export function ProductCard({ product }: { product: Product }) {

@@ -45,6 +45,26 @@ type VerificationRecord = {
   documents?: Array<{ documentType: string; fileKey: string; fileUrl: string }>;
 };
 
+function toAbsoluteMediaUrl(url?: string | null) {
+  if (!url) return "";
+  const trimmed = String(url).trim();
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed)) {
+    try {
+      const parsed = new URL(trimmed);
+      const host = parsed.hostname.toLowerCase();
+      const isLocalhostHost = host === "localhost" || host === "127.0.0.1" || host === "::1";
+      if (isLocalhostHost && parsed.pathname.startsWith("/uploads/")) {
+        return `${apiBase}${parsed.pathname}${parsed.search}${parsed.hash}`;
+      }
+    } catch {
+      return trimmed;
+    }
+    return trimmed;
+  }
+  return `${apiBase}${trimmed.startsWith("/") ? trimmed : `/${trimmed}`}`;
+}
+
 function parseAddress(value?: string | null) {
   const text = String(value ?? "").trim();
   if (!text) return { houseNo: "", street: "", city: "", lga: "", state: "", landmark: "" };
@@ -1027,7 +1047,7 @@ export default function VerifyPage() {
                     {doc.fileUrl ? (
                       <div className="actions-row" style={{ gap: 8 }}>
                         <a
-                          href={doc.fileUrl}
+                          href={toAbsoluteMediaUrl(doc.fileUrl)}
                           target="_blank"
                           rel="noreferrer"
                           className="chip"

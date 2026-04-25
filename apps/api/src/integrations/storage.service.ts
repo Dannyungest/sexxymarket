@@ -10,16 +10,59 @@ export class StorageService {
     return (
       process.env.API_PUBLIC_BASE_URL ??
       process.env.NEXT_PUBLIC_API_BASE_URL ??
-      'http://localhost:4000'
+      process.env.PUBLIC_API_URL ??
+      ''
     ).replace(/\/$/, '');
+  }
+
+  private normalizeRelativePath(input: string) {
+    return input.startsWith('/') ? input : `/${input}`;
+  }
+
+  private mapLocalhostUploadsToRelative(url: string) {
+    try {
+      const parsed = new URL(url);
+      const host = parsed.hostname.toLowerCase();
+      const isLocalhostHost =
+        host === 'localhost' || host === '127.0.0.1' || host === '::1';
+      if (!isLocalhostHost) return url;
+      if (!parsed.pathname.startsWith('/uploads/')) return url;
+      const search = parsed.search ?? '';
+      const hash = parsed.hash ?? '';
+      return `${parsed.pathname}${search}${hash}`;
+    } catch {
+      return url;
+    }
   }
 
   toAbsoluteMediaUrl(url?: string | null) {
     if (!url) return null;
-    if (/^https?:\/\//i.test(url)) return url;
+    const trimmed = String(url).trim();
+    if (!trimmed) return null;
     const apiBase = this.getPublicApiBase();
-    const normalized = url.startsWith('/') ? url : `/${url}`;
+    if (/^https?:\/\//i.test(trimmed)) {
+      const maybeRelative = this.mapLocalhostUploadsToRelative(trimmed);
+      if (/^https?:\/\//i.test(maybeRelative)) return maybeRelative;
+      return apiBase
+        ? `${apiBase}${this.normalizeRelativePath(maybeRelative)}`
+        : maybeRelative;
+    }
+    const normalized = this.normalizeRelativePath(trimmed);
+    if (!apiBase) return normalized;
     return `${apiBase}${normalized}`;
+  }
+
+  private buildPublicStorageUrl(key: string) {
+    const normalizedKey = key.replace(/^\//, '');
+    const r2Base = process.env.R2_PUBLIC_BASE_URL?.replace(/\/$/, '');
+    if (r2Base) {
+      return `${r2Base}/${normalizedKey}`;
+    }
+    const apiBase = this.getPublicApiBase();
+    if (!apiBase) {
+      return this.normalizeRelativePath(`uploads/${normalizedKey}`);
+    }
+    return `${apiBase}/uploads/${normalizedKey}`;
   }
 
   buildObjectReference(args: {
@@ -32,9 +75,7 @@ export class StorageService {
       .toLowerCase();
     const randomId = crypto.randomBytes(8).toString('hex');
     const key = `merchant/${args.merchantId}/${args.documentType}/${Date.now()}-${randomId}-${sanitizedFile}`;
-    const publicBase =
-      process.env.R2_PUBLIC_BASE_URL ?? 'https://files.sexxymarket.com';
-    const url = `${publicBase}/${key}`;
+    const url = this.buildPublicStorageUrl(key);
     return { key, url };
   }
 
@@ -44,9 +85,7 @@ export class StorageService {
       .toLowerCase();
     const randomId = crypto.randomBytes(6).toString('hex');
     const key = `products/${Date.now()}-${randomId}-${sanitizedFile}`;
-    const publicBase =
-      process.env.R2_PUBLIC_BASE_URL ?? 'https://files.sexxymarket.com';
-    const url = `${publicBase.replace(/\/$/, '')}/${key}`;
+    const url = this.buildPublicStorageUrl(key);
     return { key, url };
   }
 
@@ -76,9 +115,7 @@ export class StorageService {
     sizeBytes?: number;
     altText?: string;
   }) {
-    const publicBase =
-      process.env.R2_PUBLIC_BASE_URL ?? 'https://files.sexxymarket.com';
-    const url = `${publicBase.replace(/\/$/, '')}/${args.key.replace(/^\//, '')}`;
+    const url = this.buildPublicStorageUrl(args.key);
     return {
       key: args.key,
       url,

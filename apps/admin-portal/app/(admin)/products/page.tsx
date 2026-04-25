@@ -17,6 +17,26 @@ import { TableSkeleton } from "../../../components/loading-primitives";
 const PAGE_SIZE = 12;
 const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
 
+function normalizeMediaUrl(url?: string | null) {
+  if (!url) return "";
+  const trimmed = String(url).trim();
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed)) {
+    try {
+      const parsed = new URL(trimmed);
+      const host = parsed.hostname.toLowerCase();
+      const isLocalhostHost = host === "localhost" || host === "127.0.0.1" || host === "::1";
+      if (isLocalhostHost && parsed.pathname.startsWith("/uploads/")) {
+        return `${apiBase}${parsed.pathname}${parsed.search}${parsed.hash}`;
+      }
+    } catch {
+      return trimmed;
+    }
+    return trimmed;
+  }
+  return `${apiBase}${trimmed.startsWith("/") ? trimmed : `/${trimmed}`}`;
+}
+
 export default function AdminProductsPage() {
   const router = useRouter();
   const { push } = useAdminToast();
@@ -214,7 +234,7 @@ export default function AdminProductsPage() {
               </thead>
               <tbody>
                 {listings.map((listing) => {
-                  const u = listing.images?.[0]?.imageUrl;
+                  const u = normalizeMediaUrl(listing.images?.[0]?.imageUrl);
                   return (
                     <tr key={listing.id}>
                       <td style={{ width: 72 }}>

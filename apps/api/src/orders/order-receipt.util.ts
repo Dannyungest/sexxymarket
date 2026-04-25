@@ -13,12 +13,36 @@ export function absoluteMediaUrl(
   if (!pathOrUrl) return null;
   const p = String(pathOrUrl).trim();
   if (!p) return null;
-  if (/^https?:\/\//i.test(p)) return p;
+  if (/^https?:\/\//i.test(p)) {
+    try {
+      const parsed = new URL(p);
+      const host = parsed.hostname.toLowerCase();
+      const isLocalhostHost =
+        host === 'localhost' || host === '127.0.0.1' || host === '::1';
+      if (isLocalhostHost && parsed.pathname.startsWith('/uploads/')) {
+        const normalized = `${parsed.pathname}${parsed.search ?? ''}${parsed.hash ?? ''}`;
+        const apiBase = (
+          process.env.API_PUBLIC_BASE_URL ||
+          process.env.NEXT_PUBLIC_API_BASE_URL ||
+          process.env.PUBLIC_API_URL ||
+          ''
+        ).replace(/\/$/, '');
+        if (!apiBase) return normalized;
+        return `${apiBase}${normalized.startsWith('/') ? normalized : `/${normalized}`}`;
+      }
+    } catch {
+      // pass through
+    }
+    return p;
+  }
   const api = (
+    process.env.API_PUBLIC_BASE_URL ||
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
     process.env.R2_PUBLIC_BASE_URL ||
     process.env.PUBLIC_API_URL ||
-    'http://localhost:4000'
+    ''
   ).replace(/\/$/, '');
+  if (!api) return p.startsWith('/') ? p : `/${p}`;
   return p.startsWith('/') ? `${api}${p}` : `${api}/${p}`;
 }
 

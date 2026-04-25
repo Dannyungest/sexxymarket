@@ -25,7 +25,20 @@ const apiBase = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000"
 
 function toAbsoluteMediaUrl(url?: string | null) {
   if (!url) return "";
-  if (/^https?:\/\//i.test(url)) return url;
+  if (/^https?:\/\//i.test(url)) {
+    try {
+      const parsed = new URL(url);
+      const host = parsed.hostname.toLowerCase();
+      const isLocalhostHost = host === "localhost" || host === "127.0.0.1" || host === "::1";
+      if (isLocalhostHost && parsed.pathname.startsWith("/uploads/") && apiBase) {
+        return `${apiBase}${parsed.pathname}${parsed.search}${parsed.hash}`;
+      }
+    } catch {
+      return url;
+    }
+    return url;
+  }
+  if (!apiBase) return url.startsWith("/") ? url : `/${url}`;
   return `${apiBase}${url.startsWith("/") ? url : `/${url}`}`;
 }
 

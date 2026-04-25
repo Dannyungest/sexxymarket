@@ -20,6 +20,26 @@ const KYC_REJECT_PRESETS: { value: string; label: string }[] = [
   { value: "custom", label: "Custom reason" },
 ];
 
+function toAbsoluteMediaUrl(url?: string) {
+  if (!url) return "";
+  const trimmed = url.trim();
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed)) {
+    try {
+      const parsed = new URL(trimmed);
+      const host = parsed.hostname.toLowerCase();
+      const isLocalhostHost = host === "localhost" || host === "127.0.0.1" || host === "::1";
+      if (isLocalhostHost && parsed.pathname.startsWith("/uploads/")) {
+        return `${getAdminApiBase()}${parsed.pathname}${parsed.search}${parsed.hash}`;
+      }
+    } catch {
+      return trimmed;
+    }
+    return trimmed;
+  }
+  return `${getAdminApiBase()}${trimmed.startsWith("/") ? trimmed : `/${trimmed}`}`;
+}
+
 export default function AdminMerchantDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -132,7 +152,7 @@ export default function AdminMerchantDetailPage() {
       }, 60_000);
     } catch {
       if (fallbackUrl) {
-        window.open(fallbackUrl, "_blank", "noopener,noreferrer");
+        window.open(toAbsoluteMediaUrl(fallbackUrl), "_blank", "noopener,noreferrer");
       } else {
         push({ kind: "error", message: "Could not load the document from the server." });
       }

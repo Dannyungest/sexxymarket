@@ -41,16 +41,32 @@ export function StorefrontProvider({ children }: { children: React.ReactNode }) 
       return {};
     }
   });
-  const isFirstPersist = useRef(true);
+  const hasMounted = useRef(false);
   const [toast, setToast] = useState("");
 
   useEffect(() => {
-    if (isFirstPersist.current) {
-      isFirstPersist.current = false;
+    if (!hasMounted.current) {
+      hasMounted.current = true;
       return;
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
   }, [cart]);
+
+  useEffect(() => {
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== STORAGE_KEY) return;
+      try {
+        const next = event.newValue
+          ? (JSON.parse(event.newValue) as Record<string, CartLine>)
+          : {};
+        setCart(next);
+      } catch {
+        setCart({});
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   const addToCart = (product: Product, quantity = 1, selectedVariantId?: string) => {
     const lineKey = buildLineKey(product.id, selectedVariantId);

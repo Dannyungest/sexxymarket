@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useState } from "react";
 import { ActionButton, ProductCodePill, QuantityStepper, SurfaceCard } from "@sexxymarket/ui";
 import { CheckCircle2, CreditCard, PackageCheck, ShoppingBag } from "lucide-react";
 import { StorefrontShell } from "../../components/storefront-shell";
@@ -17,15 +17,10 @@ export default function CartPage() {
   const router = useRouter();
   const { cart, cartTotal, updateQuantity, removeFromCart } = useStorefront();
   const [methodModalOpen, setMethodModalOpen] = useState(false);
-  const isHydrated = useSyncExternalStore(
-    () => () => undefined,
-    () => true,
-    () => false,
-  );
 
   const cartLines = useMemo(() => Object.values(cart), [cart]);
-  const visibleCartLines = isHydrated ? cartLines : [];
-  const visibleCartTotal = isHydrated ? cartTotal : 0;
+  const visibleCartLines = cartLines;
+  const visibleCartTotal = cartTotal;
 
   const unitPrice = (line: (typeof visibleCartLines)[number]) =>
     line.product.priceNgn +
