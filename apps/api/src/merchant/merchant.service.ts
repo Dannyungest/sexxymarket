@@ -172,12 +172,33 @@ export class MerchantService {
     };
   }
 
-  listPending() {
-    return this.prisma.merchantProfile.findMany({
-      where: { verificationStatus: 'PENDING' },
-      include: { user: true, verifications: { include: { documents: true } } },
-      orderBy: { createdAt: 'desc' },
-    });
+  listPending(options?: { cursor?: string; limit?: number }) {
+    const take = Math.min(100, Math.max(1, options?.limit ?? 30));
+    return this.prisma.merchantProfile
+      .findMany({
+        where: { verificationStatus: 'PENDING' },
+        include: {
+          user: true,
+          verifications: { include: { documents: true } },
+        },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: take + 1,
+        ...(options?.cursor
+          ? {
+              cursor: { id: options.cursor },
+              skip: 1,
+            }
+          : {}),
+      })
+      .then((merchants) => {
+        const hasMore = merchants.length > take;
+        const items = hasMore ? merchants.slice(0, take) : merchants;
+        return {
+          items,
+          hasMore,
+          nextCursor: hasMore ? (items.at(-1)?.id ?? null) : null,
+        };
+      });
   }
 
   async approve(_merchantProfileId: string) {
@@ -192,7 +213,10 @@ export class MerchantService {
     );
   }
 
-  async listOrders(userId: string) {
+  async listOrders(
+    userId: string,
+    options?: { cursor?: string; limit?: number },
+  ) {
     const profile = await this.prisma.merchantProfile.findUnique({
       where: { userId },
     });
@@ -200,14 +224,26 @@ export class MerchantService {
       return [];
     }
 
-    return this.prisma.orderItem.findMany({
-      where: { merchantId: profile.id },
+    const take = Math.min(150, Math.max(1, options?.limit ?? 40));
+    const rows = await this.prisma.orderItem.findMany({
+      where: {
+        merchantId: profile.id,
+        ...(options?.cursor ? { id: { lt: options.cursor } } : {}),
+      },
       include: {
         order: true,
         product: true,
       },
-      orderBy: { order: { createdAt: 'desc' } },
+      orderBy: { id: 'desc' },
+      take: take + 1,
     });
+    const hasMore = rows.length > take;
+    const items = hasMore ? rows.slice(0, take) : rows;
+    return {
+      items,
+      hasMore,
+      nextCursor: hasMore ? (items.at(-1)?.id ?? null) : null,
+    };
   }
 
   private validateKycDocumentPayload(
@@ -741,10 +777,12 @@ export class MerchantService {
         before.isRegisteredBusinessUpgrade &&
         before.merchant.businessType === 'INDIVIDUAL';
       const resolvedBusinessType =
-        promoteRegistered || before.merchant.businessType === 'REGISTERED_BUSINESS'
+        promoteRegistered ||
+        before.merchant.businessType === 'REGISTERED_BUSINESS'
           ? 'REGISTERED_BUSINESS'
           : 'INDIVIDUAL';
-      const resolvedTier = resolvedBusinessType === 'REGISTERED_BUSINESS' ? 'SUPER' : 'STANDARD';
+      const resolvedTier =
+        resolvedBusinessType === 'REGISTERED_BUSINESS' ? 'SUPER' : 'STANDARD';
       await this.prisma.merchantProfile.update({
         where: { id: verification.merchantId },
         data: {

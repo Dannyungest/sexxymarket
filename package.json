@@ -8,7 +8,10 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "format": "turbo run format",
-    "quality:gates": "npm run lint && npm run build && npm run test"
+    "quality:gates": "npm run lint && npm run build && npm run test",
+    "loadtest:catalog": "k6 run scripts/load/catalog-spike.k6.js",
+    "loadtest:checkout": "k6 run scripts/load/checkout-burst.k6.js",
+    "loadtest:webhook": "k6 run scripts/load/webhook-burst.k6.js"
   },
   "license": "UNLICENSED",
   "private": true,

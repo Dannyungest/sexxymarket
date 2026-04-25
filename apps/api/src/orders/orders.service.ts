@@ -9,6 +9,7 @@ import { PaymentsService } from '../payments/payments.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CreateManualOrderDto } from './dto/create-manual-order.dto';
 import { NotificationsService } from '../integrations/notifications.service';
+import { BackgroundJobsService } from '../integrations/background-jobs.service';
 import {
   buildReceiptViewUrl,
   orderIncludeForPaymentWebhook,
@@ -27,6 +28,7 @@ export class OrdersService {
     private readonly prisma: PrismaService,
     private readonly paymentsService: PaymentsService,
     private readonly notificationsService: NotificationsService,
+    private readonly backgroundJobs: BackgroundJobsService,
   ) {}
 
   private async generateTrackingNumber() {
@@ -202,19 +204,58 @@ export class OrdersService {
       });
   }
 
-  listOrdersForUser(userId: string) {
-    return this.prisma.order.findMany({
-      where: { userId },
-      include: { items: { include: { product: true } } },
-      orderBy: { createdAt: 'desc' },
-    });
+  listOrdersForUser(
+    userId: string,
+    options?: { cursor?: string; limit?: number },
+  ) {
+    const take = Math.min(100, Math.max(1, options?.limit ?? 30));
+    return this.prisma.order
+      .findMany({
+        where: { userId },
+        include: { items: { include: { product: true } } },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: take + 1,
+        ...(options?.cursor
+          ? {
+              cursor: { id: options.cursor },
+              skip: 1,
+            }
+          : {}),
+      })
+      .then((orders) => {
+        const hasMore = orders.length > take;
+        const items = hasMore ? orders.slice(0, take) : orders;
+        return {
+          items,
+          nextCursor: hasMore ? (items.at(-1)?.id ?? null) : null,
+          hasMore,
+        };
+      });
   }
 
-  listAllOrders() {
-    return this.prisma.order.findMany({
-      include: { items: { include: { product: true } }, customer: true },
-      orderBy: { createdAt: 'desc' },
-    });
+  listAllOrders(options?: { cursor?: string; limit?: number }) {
+    const take = Math.min(200, Math.max(1, options?.limit ?? 50));
+    return this.prisma.order
+      .findMany({
+        include: { items: { include: { product: true } }, customer: true },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: take + 1,
+        ...(options?.cursor
+          ? {
+              cursor: { id: options.cursor },
+              skip: 1,
+            }
+          : {}),
+      })
+      .then((orders) => {
+        const hasMore = orders.length > take;
+        const items = hasMore ? orders.slice(0, take) : orders;
+        return {
+          items,
+          nextCursor: hasMore ? (items.at(-1)?.id ?? null) : null,
+          hasMore,
+        };
+      });
   }
 
   /**
@@ -356,22 +397,24 @@ export class OrdersService {
       const lines = toReceiptLineRows(
         forReceipt as unknown as OrderForReceiptEmail,
       );
-      await this.notificationsService.sendOrderReceiptEmail({
-        to: emailForNotify,
-        recipientName: payload.recipientName,
-        orderId: forReceipt.id,
-        totalNgn: forReceipt.totalNgn,
-        subtotalNgn: forReceipt.subtotalNgn,
-        deliveryFeeNgn: forReceipt.deliveryFeeNgn,
-        items: lines,
-        shippingAddress: forReceipt.shippingAddress,
-        shippingState: forReceipt.shippingState,
-        shippingCity: forReceipt.shippingCity,
-        recipientPhone: forReceipt.recipientPhone,
-        receiptViewUrl: buildReceiptViewUrl(
-          forReceipt.paymentReference,
-          storefrontBaseUrl(),
-        ),
+      this.backgroundJobs.enqueue('manual-order-receipt-email', async () => {
+        await this.notificationsService.sendOrderReceiptEmail({
+          to: emailForNotify,
+          recipientName: payload.recipientName,
+          orderId: forReceipt.id,
+          totalNgn: forReceipt.totalNgn,
+          subtotalNgn: forReceipt.subtotalNgn,
+          deliveryFeeNgn: forReceipt.deliveryFeeNgn,
+          items: lines,
+          shippingAddress: forReceipt.shippingAddress,
+          shippingState: forReceipt.shippingState,
+          shippingCity: forReceipt.shippingCity,
+          recipientPhone: forReceipt.recipientPhone,
+          receiptViewUrl: buildReceiptViewUrl(
+            forReceipt.paymentReference,
+            storefrontBaseUrl(),
+          ),
+        });
       });
     }
 
@@ -380,9 +423,11 @@ export class OrdersService {
       include: orderIncludeForPaymentWebhook,
     });
     if (forMerchants) {
-      this.notificationsService.notifyMerchantsOnPaidOrder(
-        forMerchants as unknown as OrderForMerchantNotify,
-      );
+      this.backgroundJobs.enqueue('manual-order-merchant-notify', async () => {
+        this.notificationsService.notifyMerchantsOnPaidOrder(
+          forMerchants as unknown as OrderForMerchantNotify,
+        );
+      });
     }
 
     return order;

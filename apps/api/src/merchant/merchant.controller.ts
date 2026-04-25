@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Put,
+  Query,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -59,8 +60,15 @@ export class MerchantController {
   @Get('orders')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('MERCHANT')
-  orders(@CurrentUser() user: AuthUser) {
-    return this.merchantService.listOrders(user.sub);
+  orders(
+    @CurrentUser() user: AuthUser,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.merchantService.listOrders(user.sub, {
+      cursor,
+      limit: limit ? Number(limit) : undefined,
+    });
   }
 
   @Get('banks')
@@ -117,8 +125,11 @@ export class MerchantController {
   @Get('pending')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPER_ADMIN')
-  pending() {
-    return this.merchantService.listPending();
+  pending(@Query('cursor') cursor?: string, @Query('limit') limit?: string) {
+    return this.merchantService.listPending({
+      cursor,
+      limit: limit ? Number(limit) : undefined,
+    });
   }
 
   @Patch(':id/approve')

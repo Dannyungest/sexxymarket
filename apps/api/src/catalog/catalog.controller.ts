@@ -55,6 +55,19 @@ export class CatalogController {
     return this.catalogService.listProducts();
   }
 
+  @Get('products/feed')
+  listProductsFeed(
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
+    @Query('categoryId') categoryId?: string,
+  ) {
+    return this.catalogService.listProductsFeed({
+      cursor,
+      limit: limit ? Number(limit) : undefined,
+      categoryId,
+    });
+  }
+
   @Get('products/search')
   searchProducts(
     @Query('q') query?: string,

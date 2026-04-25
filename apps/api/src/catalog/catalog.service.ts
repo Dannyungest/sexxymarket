@@ -921,6 +921,41 @@ export class CatalogService {
       );
   }
 
+  listProductsFeed(options?: {
+    cursor?: string;
+    limit?: number;
+    categoryId?: string;
+  }) {
+    const take = Math.min(120, Math.max(1, options?.limit ?? 40));
+    return this.prisma.product
+      .findMany({
+        where: {
+          isApproved: true,
+          isHidden: false,
+          authoringStatus: 'PUBLISHED',
+          ...(options?.categoryId ? { categoryId: options.categoryId } : {}),
+        },
+        include: this.productInclude,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: take + 1,
+        ...(options?.cursor
+          ? {
+              cursor: { id: options.cursor },
+              skip: 1,
+            }
+          : {}),
+      })
+      .then((products) => {
+        const hasMore = products.length > take;
+        const items = hasMore ? products.slice(0, take) : products;
+        return {
+          items: items.map((product) => this.normalizeProductMedia(product)),
+          hasMore,
+          nextCursor: hasMore ? (items.at(-1)?.id ?? null) : null,
+        };
+      });
+  }
+
   async searchProducts(filters: {
     query?: string;
     categoryId?: string;

@@ -100,6 +100,8 @@ model User {
   adminLoginChallenges AdminLoginChallenge[]
   passwordResetOtps PasswordResetOtp[]
   savedRecipients SavedRecipient[]
+
+  @@index([role, createdAt])
 }
 
 model AdminLoginChallenge {
@@ -163,6 +165,10 @@ model MerchantProfile {
   verifications      MerchantVerification[]
   payoutOtpChallenges MerchantPayoutOtpChallenge[]
   supportMessages    MerchantSupportMessage[]
+
+  @@index([verificationStatus, createdAt])
+  @@index([status, createdAt])
+  @@index([merchantTier, createdAt])
 }
 
 model MerchantPayoutOtpChallenge {
@@ -245,6 +251,10 @@ model Product {
   options          ProductOption[]
   variants         ProductVariant[]
   revisions        ProductRevision[]
+
+  @@index([isApproved, isHidden, authoringStatus, createdAt])
+  @@index([merchantId, createdAt])
+  @@index([categoryId, createdAt])
 }
 
 model ProductImage {
@@ -425,6 +435,11 @@ model Order {
   updatedAt          DateTime       @updatedAt
   customer           User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
   items              OrderItem[]
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@index([paymentReference])
+  @@index([createdAt])
 }
 
 model OrderItem {
@@ -442,6 +457,9 @@ model OrderItem {
   order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product      Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
   variant      ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  @@index([merchantId, orderId])
+  @@index([productId, orderId])
 }
 
 model Review {

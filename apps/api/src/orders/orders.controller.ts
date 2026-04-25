@@ -45,14 +45,24 @@ export class OrdersController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  listMine(@CurrentUser() user: AuthUser) {
-    return this.ordersService.listOrdersForUser(user.sub);
+  listMine(
+    @CurrentUser() user: AuthUser,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.ordersService.listOrdersForUser(user.sub, {
+      cursor,
+      limit: limit ? Number(limit) : undefined,
+    });
   }
 
   @Get('admin/all')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'SUPER_ADMIN')
-  listAll() {
-    return this.ordersService.listAllOrders();
+  listAll(@Query('cursor') cursor?: string, @Query('limit') limit?: string) {
+    return this.ordersService.listAllOrders({
+      cursor,
+      limit: limit ? Number(limit) : undefined,
+    });
   }
 }
