@@ -1,0 +1,9 @@
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+COPY apps/storefront/package.json apps/storefront/package.json
+RUN npm install
+COPY . .
+RUN npm run build --workspace=storefront
+EXPOSE 3000
+CMD ["npm", "run", "start", "--workspace=storefront", "--", "-p", "3000"]

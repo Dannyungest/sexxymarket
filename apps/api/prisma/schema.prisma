@@ -1,0 +1,469 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CUSTOMER
+  MERCHANT
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum MerchantStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAUSED
+  BLACKLISTED
+}
+
+enum MerchantTier {
+  STANDARD
+  SUPER
+}
+
+enum BusinessType {
+  INDIVIDUAL
+  REGISTERED_BUSINESS
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum IdentityType {
+  NIN
+  VOTERS_CARD
+  DRIVERS_LICENSE
+  PASSPORT
+}
+
+enum ListingApproval {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ProductAuthoringStatus {
+  DRAFT
+  READY_FOR_REVIEW
+  PUBLISHED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentGateway {
+  MONIEPOINT
+  MONNIFY
+  FLUTTERWAVE
+  MANUAL_CASH
+  MANUAL_ONLINE
+}
+
+model User {
+  id              String            @id @default(cuid())
+  email           String            @unique
+  passwordHash    String
+  firstName       String
+  lastName        String
+  phone           String?
+  role            UserRole          @default(CUSTOMER)
+  isBlocked       Boolean           @default(false)
+  isBlacklisted   Boolean           @default(false)
+  walletCreditNgn Int               @default(0)
+  couponCode      String?
+  discountPercent Int               @default(0)
+  isActive        Boolean           @default(true)
+  emailVerifiedAt   DateTime?
+  emailVerificationToken String?  @unique
+  mustChangePassword   Boolean     @default(false)
+  passwordSetAt        DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  merchantProfile MerchantProfile?
+  orders          Order[]
+  reviews         Review[]
+  adminLoginChallenges AdminLoginChallenge[]
+  passwordResetOtps PasswordResetOtp[]
+  savedRecipients SavedRecipient[]
+}
+
+model AdminLoginChallenge {
+  id            String   @id @default(cuid())
+  userId        String
+  codeHash      String
+  expiresAt     DateTime
+  attempts      Int      @default(0)
+  keepSignedIn  Boolean  @default(false)
+  consumedAt    DateTime?
+  invalidatedAt DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([expiresAt])
+  @@index([consumedAt])
+}
+
+model PasswordResetOtp {
+  id            String   @id @default(cuid())
+  userId        String
+  codeHash      String
+  expiresAt     DateTime
+  attempts      Int      @default(0)
+  consumedAt    DateTime?
+  invalidatedAt DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([expiresAt])
+  @@index([consumedAt])
+}
+
+model MerchantProfile {
+  id                 String         @id @default(cuid())
+  merchantCode       String         @unique
+  userId             String         @unique
+  businessName       String
+  /// Primary contact or registered address
+  contactAddress     String
+  /// Storefront or walk-in address; empty when online-only
+  businessAddress    String         @default("")
+  hasPhysicalLocation Boolean       @default(false)
+  businessType       BusinessType   @default(INDIVIDUAL)
+  status             MerchantStatus @default(PENDING)
+  merchantTier       MerchantTier   @default(STANDARD)
+  verificationStatus VerificationStatus @default(PENDING)
+  verificationNote   String?
+  agreementAccepted  Boolean        @default(false)
+  payoutAccountName  String
+  payoutAccountNo    String
+  payoutBankCode     String
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  user               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products           Product[]
+  verifications      MerchantVerification[]
+  payoutOtpChallenges MerchantPayoutOtpChallenge[]
+  supportMessages    MerchantSupportMessage[]
+}
+
+model MerchantPayoutOtpChallenge {
+  id            String   @id @default(cuid())
+  merchantId    String
+  bankCode      String
+  accountNo     String
+  accountName   String
+  codeHash      String
+  expiresAt     DateTime
+  attempts      Int      @default(0)
+  consumedAt    DateTime?
+  invalidatedAt DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  merchant      MerchantProfile @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId, createdAt])
+  @@index([expiresAt])
+  @@index([consumedAt])
+}
+
+model MerchantSupportMessage {
+  id          String   @id @default(cuid())
+  merchantId  String
+  category    String
+  subject     String
+  message     String
+  orderId     String?
+  status      String   @default("OPEN")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  merchant    MerchantProfile @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId, createdAt])
+  @@index([status, createdAt])
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  parentId  String?
+  createdAt DateTime  @default(now())
+  products  Product[]
+  parent    Category? @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children  Category[] @relation("CategoryTree")
+}
+
+model Product {
+  id               String           @id @default(cuid())
+  name             String
+  slug             String           @unique
+  productCode      String           @unique
+  authoringStatus  ProductAuthoringStatus @default(DRAFT)
+  description      String
+  descriptionRich  Json?
+  priceNgn         Int
+  stock            Int
+  isApproved       Boolean          @default(false)
+  approvalStatus   ListingApproval  @default(PENDING)
+  publishedAt      DateTime?
+  lastSavedAt      DateTime?
+  autosaveVersion  Int              @default(0)
+  requiresManualApproval Boolean    @default(true)
+  isHidden         Boolean          @default(false)
+  hiddenReason     String?
+  hiddenAt         DateTime?
+  variationGuide   String?
+  variationGuideTable Json?
+  merchantId       String?
+  categoryId       String
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  merchant         MerchantProfile? @relation(fields: [merchantId], references: [id], onDelete: SetNull)
+  category         Category         @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  images           ProductImage[]
+  orderItems       OrderItem[]
+  reviews          Review[]
+  options          ProductOption[]
+  variants         ProductVariant[]
+  revisions        ProductRevision[]
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  imageUrl  String
+  storageKey String?
+  altText   String?
+  sortOrder Int      @default(0)
+  isPrimary Boolean  @default(false)
+  variantId String?
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  @@index([productId, sortOrder])
+}
+
+model ProductVariant {
+  id           String   @id @default(cuid())
+  productId    String
+  label        String
+  sku          String?
+  extraPriceNgn Int     @default(0)
+  stock        Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems   OrderItem[]
+  optionValues ProductVariantValue[]
+  images       ProductImage[]
+
+  @@index([productId, isActive])
+  @@unique([productId, sku])
+}
+
+model ProductOption {
+  id         String   @id @default(cuid())
+  productId  String
+  name       String
+  displayType String  @default("TEXT")
+  guideText  String?
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  values     ProductOptionValue[]
+
+  @@index([productId, sortOrder])
+}
+
+model ProductOptionValue {
+  id         String   @id @default(cuid())
+  optionId   String
+  value      String
+  code       String?
+  imageUrl   String?
+  storageKey String?
+  altText    String?
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  option     ProductOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  variants   ProductVariantValue[]
+
+  @@index([optionId, sortOrder])
+  @@unique([optionId, value])
+}
+
+model ProductVariantValue {
+  id            String @id @default(cuid())
+  variantId     String
+  optionValueId String
+  variant       ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  optionValue   ProductOptionValue @relation(fields: [optionValueId], references: [id], onDelete: Cascade)
+
+  @@unique([variantId, optionValueId])
+  @@index([optionValueId])
+}
+
+model ProductRevision {
+  id                String   @id @default(cuid())
+  productId         String
+  revisionNumber    Int
+  action            String
+  snapshot          Json
+  metadata          Json?
+  createdByUserId   String?
+  createdAt         DateTime @default(now())
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, revisionNumber])
+  @@index([productId, createdAt])
+}
+
+model MerchantVerification {
+  id             String            @id @default(cuid())
+  merchantId      String
+  /// When true, approval should promote account to REGISTERED_BUSINESS (and required CAC/TIN per policy).
+  isRegisteredBusinessUpgrade Boolean   @default(false)
+  firstName       String?
+  lastName        String?
+  gender          String?
+  dateOfBirth     String?
+  idNumber        String?
+  residentialAddress String?
+  businessName    String?
+  isPhysicalStore Boolean?
+  physicalStoreAddress String?
+  identityType    IdentityType
+  cacNumber       String?
+  tinNumber       String?
+  businessAddress String
+  status          VerificationStatus @default(PENDING)
+  reviewReason    String?
+  submittedAt     DateTime          @default(now())
+  reviewedAt      DateTime?
+  merchant        MerchantProfile   @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  documents       MerchantDocument[]
+}
+
+model MerchantDocument {
+  id              String               @id @default(cuid())
+  verificationId  String
+  documentType    String
+  fileKey         String
+  fileUrl         String
+  createdAt       DateTime             @default(now())
+  verification    MerchantVerification @relation(fields: [verificationId], references: [id], onDelete: Cascade)
+}
+
+/// Customer-saved delivery profiles for faster checkout (storefront only).
+model SavedRecipient {
+  id              String   @id @default(cuid())
+  userId          String
+  label           String?
+  recipientName   String
+  recipientPhone  String
+  houseNo         String
+  street          String
+  landmark        String   @default("")
+  shippingState   String
+  shippingLga     String
+  shippingCity    String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model Order {
+  id                 String         @id @default(cuid())
+  userId             String?
+  status             OrderStatus    @default(PENDING)
+  paymentGateway     PaymentGateway
+  paymentReference   String?
+  paymentLink        String?
+  trackingNumber     String?        @unique
+  deliveryUpdatedAt  DateTime?
+  deliveryNote       String?
+  subtotalNgn        Int
+  deliveryFeeNgn     Int            @default(0)
+  totalNgn           Int
+  shippingAddress    String
+  shippingState      String
+  shippingCity       String
+  recipientPhone     String
+  recipientName      String
+  guestEmail         String?
+  guestPhone         String?
+  /// Recorded amount for in-person cash (admin manual order); optional for legacy rows
+  cashAmountNgn      Int?
+  /// Name of staff who collected cash (admin manual order)
+  cashCollectedBy    String?
+  commissionNgn      Int            @default(0)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  customer           User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  items              OrderItem[]
+}
+
+model OrderItem {
+  id           String   @id @default(cuid())
+  orderId      String
+  productId    String
+  variantId    String?
+  quantity     Int
+  unitPriceNgn Int
+  lineTotalNgn Int
+  merchantId   String?
+  productCodeSnapshot String?
+  variantSkuSnapshot String?
+  variantLabelSnapshot String?
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  variant      ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  userId     String
+  productId  String
+  orderId    String
+  rating     Int
+  comment    String
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, orderId, productId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  targetType String
+  targetId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+}

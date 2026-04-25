@@ -1,0 +1,12 @@
+{
+  "name": "@sexxymarket/config",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "build": "echo \"config package does not build\"",
+    "lint": "echo \"no lint configured\"",
+    "test": "echo \"no tests\"",
+    "format": "echo \"no format task\""
+  }
+}

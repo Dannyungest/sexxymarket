@@ -1,0 +1,13 @@
+{
+  "name": "@sexxymarket/types",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "echo \"types package uses source-only exports\"",
+    "lint": "echo \"no lint configured\"",
+    "test": "echo \"no tests\"",
+    "format": "echo \"no format task\""
+  }
+}

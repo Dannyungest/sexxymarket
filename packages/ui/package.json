@@ -1,0 +1,16 @@
+{
+  "name": "@sexxymarket/ui",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.tsx",
+  "types": "src/index.tsx",
+  "scripts": {
+    "build": "echo \"ui package uses source-only exports\"",
+    "lint": "echo \"no lint configured\"",
+    "test": "echo \"no tests\"",
+    "format": "echo \"no format task\""
+  },
+  "dependencies": {
+    "react": "^19.2.0"
+  }
+}

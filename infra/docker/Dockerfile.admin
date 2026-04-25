@@ -1,0 +1,9 @@
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+COPY apps/admin-portal/package.json apps/admin-portal/package.json
+RUN npm install
+COPY . .
+RUN npm run build --workspace=admin-portal
+EXPOSE 3002
+CMD ["npm", "run", "start", "--workspace=admin-portal", "--", "-p", "3002"]

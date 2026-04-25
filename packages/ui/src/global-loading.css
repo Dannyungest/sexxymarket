@@ -1,0 +1,35 @@
+@keyframes sm-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes sm-logo-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.94);
+    opacity: 0.88;
+  }
+}
+
+@keyframes sm-shimmer {
+  0% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes sk {
+  to {
+    transform: rotate(360deg);
+  }
+}
